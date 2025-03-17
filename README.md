@@ -10,6 +10,10 @@
 - 送信者アドレスの永続的な保存
 - 最新の送信者アドレスを取得するゲッター関数
 
+### デプロイ情報
+
+- テストネットコントラクトアドレス: `kQDUe600N-kN8bYgFMstDeyL5yWvjx05k-9QFP4n2iDVWdSz`
+
 ### 実装の詳細
 
 - `recv_internal`: メッセージを受信し、送信者のアドレスを保存
@@ -33,6 +37,20 @@ yarn install
 
 ```bash
 yarn compile
+```
+
+## デプロイとテスト
+
+コントラクトをデプロイするには：
+
+```bash
+yarn deploy:testnet
+```
+
+オンチェーンテストを実行するには：
+
+```bash
+yarn onchaintest
 ```
 
 ## プロジェクト構造
