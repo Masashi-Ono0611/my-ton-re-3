@@ -1,4 +1,6 @@
-import { Address, Cell, contractAddress, toNano } from "@ton/ton";
+import { Cell, beginCell, contractAddress, toNano } from "@ton/ton";
+import { deployContract } from "./utils/deployer";
+import { printAddress, printDeploy, printHeader } from "./utils/print";
 import { hex } from "../build/main.compiled.json";
 import qs from "qs";
 import qrcode from "qrcode-terminal";
@@ -6,39 +8,69 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-async function deployScript() {
+(async () => {
+  // initialize counter with 0 and empty address
+  const initDataCell = beginCell()
+    .storeUint(0, 32) // counter_value = 0
+    .storeAddress(null) // empty sender address
+    .endCell();
+
   const codeCell = Cell.fromBoc(Buffer.from(hex, "hex"))[0];
-  const dataCell = new Cell();
 
   const address = contractAddress(0, {
     code: codeCell,
-    data: dataCell,
+    data: initDataCell,
   });
 
-  console.log("Deploy script is running, let's deploy our main.fc contract...");
-  console.log("The address of the contract is following:", address.toString({
-    testOnly: process.env.TESTNET ? true : false,
-  }));
+  const deployAmount = toNano("0.01");
 
-  // Tonhub用のQRコード
-  console.log(`\nPlease scan the QR code below to deploy using Tonhub (${process.env.TESTNET ? "Testnet" : "Mainnet"}):`);
-  let tonhubLink =
-    `https://${process.env.TESTNET ? "test." : ""}tonhub.com/transfer/` +
-    address.toString({
-      testOnly: process.env.TESTNET ? true : false,
-    }) +
-    "?" +
-    qs.stringify({
-      text: "Deploy contract",
-      amount: toNano(0.01).toString(10),
-    });
+  const isTestnet = process.env.TESTNET === "true";
+  const client = isTestnet ? "testnet" : "mainnet";
 
-  qrcode.generate(tonhubLink, { small: true });
+  printHeader("deploy.ts");
+  printAddress(address);
+  
+  try {
+    await deployContract(
+      {
+        address,
+        init: {
+          code: codeCell,
+          data: initDataCell,
+        },
+      },
+      deployAmount,
+      client
+    );
+    printDeploy(address, deployAmount, "main.fc");
 
-  // コントラクトアドレスを表示（手動で入力する場合用）
-  console.log(`\nIf QR code doesn't work, you can manually enter these details in Tonhub (${process.env.TESTNET ? "Testnet" : "Mainnet"}):`);
-  console.log(`Contract Address: ${address.toString({testOnly: process.env.TESTNET ? true : false})}`);
-  console.log(`Amount: 0.01 TON`);
-}
+    // Tonkeeper用のQRコード
+    console.log(`\nTonkeeperでデプロイするには、以下のQRコードをスキャンしてください (${isTestnet ? "Testnet" : "Mainnet"}):`);
+    let tonkeeperLink = `tonkeeper://v2/transfer/${address.toString({
+      testOnly: isTestnet,
+    })}?${qs.stringify({
+      text: "Deploy main.fc",
+      amount: deployAmount.toString(10),
+    })}`;
 
-deployScript(); 
+    qrcode.generate(tonkeeperLink, { small: true });
+
+    // TON Space Wallet用のQRコード
+    console.log(`\nTON Space Walletでデプロイするには、以下のQRコードをスキャンしてください (${isTestnet ? "Testnet" : "Mainnet"}):`);
+    let tonSpaceLink = `tonsafe://transfer/${address.toString({
+      testOnly: isTestnet,
+    })}?${qs.stringify({
+      text: "Deploy main.fc",
+      amount: deployAmount.toString(10),
+    })}`;
+
+    qrcode.generate(tonSpaceLink, { small: true });
+
+    // 手動入力用の情報を表示
+    console.log(`\nQRコードが機能しない場合は、以下の情報を手動で入力してください (${isTestnet ? "Testnet" : "Mainnet"}):`);
+    console.log(`コントラクトアドレス: ${address.toString({testOnly: isTestnet})}`);
+    console.log(`送金額: 0.01 TON`);
+  } catch (error) {
+    console.error("デプロイ中にエラーが発生しました:", error);
+  }
+})(); 
