@@ -4,6 +4,9 @@ import { getHttpV4Endpoint } from "@orbs-network/ton-access";
 import { TonClient4 } from "@ton/ton";
 import qs from "qs";
 import qrcode from "qrcode-terminal";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 async function onchainTestScript() {
   const codeCell = Cell.fromBoc(Buffer.from(hex, "hex"))[0];
@@ -15,7 +18,7 @@ async function onchainTestScript() {
   });
 
   const endpoint = await getHttpV4Endpoint({
-    network: "testnet",
+    network: process.env.TESTNET ? "testnet" : "mainnet",
   });
   const client4 = new TonClient4({ endpoint });
 
@@ -27,12 +30,12 @@ async function onchainTestScript() {
     return;
   }
 
-  // Tonhub用のQRコード（テストネット）
-  console.log("\nPlease scan the QR code below to send a test transaction using Tonhub (Testnet):");
+  // Tonhub用のQRコード
+  console.log(`\nPlease scan the QR code below to send a test transaction using Tonhub (${process.env.TESTNET ? "Testnet" : "Mainnet"}):`);
   let tonhubLink =
-    `https://test.tonhub.com/transfer/` +
+    `https://${process.env.TESTNET ? "test." : ""}tonhub.com/transfer/` +
     address.toString({
-      testOnly: true,
+      testOnly: process.env.TESTNET ? true : false,
     }) +
     "?" +
     qs.stringify({
@@ -43,8 +46,8 @@ async function onchainTestScript() {
   qrcode.generate(tonhubLink, { small: true });
 
   // コントラクトアドレスを表示（手動で入力する場合用）
-  console.log("\nIf QR code doesn't work, you can manually enter these details in Tonhub:");
-  console.log(`Contract Address: ${address.toString({testOnly: true})}`);
+  console.log(`\nIf QR code doesn't work, you can manually enter these details in Tonhub (${process.env.TESTNET ? "Testnet" : "Mainnet"}):`);
+  console.log(`Contract Address: ${address.toString({testOnly: process.env.TESTNET ? true : false})}`);
   console.log(`Amount: 0.01 TON`);
 
   let recent_sender_archive: Address;
@@ -74,7 +77,7 @@ async function onchainTestScript() {
     ) {
       console.log(
         "New recent sender found: " +
-          most_recent_sender.toString({ testOnly: true })
+          most_recent_sender.toString({ testOnly: process.env.TESTNET ? true : false })
       );
       recent_sender_archive = most_recent_sender;
     }
