@@ -1,16 +1,16 @@
-import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, Sender, SendMode, toNano } from "@ton/core";
+import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, Sender, SendMode } from "@ton/core";
 
 export type MainContractConfig = {
   number: number;
-  recent_sender: Address;
-  owner: Address;
+  address: Address;
+  owner_address: Address;
 };
 
 export function mainContractConfigToCell(config: MainContractConfig): Cell {
   return beginCell()
     .storeUint(config.number, 32)
-    .storeAddress(config.recent_sender)
-    .storeAddress(config.owner)
+    .storeAddress(config.address)
+    .storeAddress(config.owner_address)
     .endCell();
 }
 
@@ -43,10 +43,12 @@ export class MainContract implements Contract {
   async sendIncrement(
     provider: ContractProvider,
     sender: Sender,
-    value: bigint
+    value: bigint,
+    increment_by: number
   ) {
     const msg_body = beginCell()
       .storeUint(1, 32) // OP code
+      .storeUint(increment_by, 32) // increment_by value
       .endCell();
 
     await provider.internal(sender, {
@@ -72,15 +74,29 @@ export class MainContract implements Contract {
     });
   }
 
-  async sendWithdraw(
+  async sendNoCodeDeposit(
+    provider: ContractProvider,
+    sender: Sender,
+    value: bigint
+  ) {
+    const msg_body = beginCell().endCell();
+
+    await provider.internal(sender, {
+      value,
+      sendMode: SendMode.PAY_GAS_SEPARATELY,
+      body: msg_body,
+    });
+  }
+
+  async sendWithdrawalRequest(
     provider: ContractProvider,
     sender: Sender,
     value: bigint,
-    withdrawAmount: bigint
+    amount: bigint
   ) {
     const msg_body = beginCell()
       .storeUint(3, 32) // OP code
-      .storeCoins(withdrawAmount)
+      .storeCoins(amount)
       .endCell();
 
     await provider.internal(sender, {
@@ -95,12 +111,14 @@ export class MainContract implements Contract {
     return {
       number: stack.readNumber(),
       recent_sender: stack.readAddress(),
-      owner: stack.readAddress(),
+      owner_address: stack.readAddress(),
     };
   }
 
   async getBalance(provider: ContractProvider) {
     const { stack } = await provider.get("balance", []);
-    return stack.readNumber();
+    return {
+      number: stack.readNumber(),
+    };
   }
 }
