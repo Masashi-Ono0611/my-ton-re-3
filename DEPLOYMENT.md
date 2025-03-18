@@ -1,5 +1,19 @@
 # デプロイメント情報
 
+## 重要な注意事項
+### 新規コントラクトのデプロイについて
+同じウォレットアドレス（owner_address）を使用して新しいコントラクトをデプロイする場合、以下のいずれかの条件を変更する必要があります：
+- 初期カウンター値（number）を変更する（例：0から100に変更）
+- アドレス（address）を変更する
+- オーナーアドレス（owner_address）を変更する
+
+これは、TONブロックチェーンでは、コントラクトアドレスが以下の要素から決定されるためです：
+- コントラクトコード
+- 初期データ（number, address, owner_address）
+- ワークチェーンID
+
+同じ設定でデプロイすると、同じコントラクトアドレスとなり、既存のコントラクトと競合してしまいます。
+
 ## 4_5 デプロイ情報（Testnet）
 
 ### コントラクト情報
@@ -21,15 +35,15 @@
 ### コントラクト情報
 - デプロイ日時: 2024-03-17
 - ネットワーク: Testnet
-- コントラクトアドレス: `EQCDd9nCiHMj5g27QATPCRVGr_0OzLvvenVK8xz9J29p6dX4`
-- Tonscan URL: https://testnet.tonscan.org/address/EQCDd9nCiHMj5g27QATPCRVGr_0OzLvvenVK8xz9J29p6dX4
+- コントラクトアドレス: `EQDLFbb5Iv_U47ooUfPUvbW_d_UcCHhd8ZEoeETUu0RVrg1F`
+- Tonscan URL: https://testnet.tonscan.org/address/EQDLFbb5Iv_U47ooUfPUvbW_d_UcCHhd8ZEoeETUu0RVrg1F
 
 ### ウォレット情報
 - 使用ウォレット: Tonkeeper
 - ウォレットアドレス: `EQAq5l6ZdK2JimhY7CJCjrsuT5BaY1M68rsDU8w0P7qPs1zx`
 
 ### デプロイ設定
-- 初期カウンター値: 0
+- 初期カウンター値: 100
 - 初期デポジット: 0.05 TON
 
 ### トラブルシューティング
